@@ -1,0 +1,15 @@
+root:
+  color = 'red':
+    @second_partial @other_partial [color ? zfjoi oez,feoiz] red toto [otherFunc color]!
+  color = 'blue': blue toto !
+
+second_partial:
+  funcfunc 'toto' = 12: youpi
+  size > 50 & (color = 'red'): big
+  size <= 50: small
+
+other_partial:
+  simpleFunc size:
+    fat
+  *:
+    lean
