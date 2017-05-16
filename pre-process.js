@@ -44,6 +44,14 @@ const stripLastLinebreaks = str => str.replace(/\n+$/, '');
 
 const cleanBlockContent = R.compose(stripLastLinebreaks, stripOneIndentationLevel);
 
+const isolateLists = str => str.replace(/\+( ?)(.*\n?)( \1[^+]*)*/gm, (match, p1, p2, p3) => {
+  if (p3) {
+    return `{${p2.replace('\n', '')}${p3.replace(/^  /gm, '')}}`;
+  } else {
+    return `{${p2.replace('\n', '')}}`;
+  }
+});
+
 const isolateBlocks = (str) => {
   const regex = /^( *)(.*): ?(.*$\n?(?:(?:^\1 +.*$\n?)|(?:^$\n))*)/gm;
   const resultsArray = execRegexToArray(regex, str);
@@ -57,16 +65,16 @@ const buildAst = R.compose(
 
     if (subBlocks.length) {
       return {
-        name: result[1],
+        name: result[1] ? result[1] : '',
         type: 'node',
         data: subBlocks
       }
     }
     else {
       return {
-        name: result[1],
+        name: result[1] ? result[1] : '',
         type: 'end',
-        data: cleanBlockContent(result[2])
+        data: R.compose(isolateLists, cleanBlockContent)(result[2])
       }
     }
   }),

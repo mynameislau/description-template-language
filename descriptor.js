@@ -10,8 +10,6 @@ const compileTemplate = (templateFile, helpers) => {
   const preprocessed = addParentheses(buildAst(templateFile));
   parser.helpers = helpers;
 
-  //console.log(preprocessed);
-
   let compiled;
   try {
     compiled = parser.parse(preprocessed);

@@ -7,6 +7,7 @@ const evaluate = R.curry((data, expressionAST) => {
 
 const evaluateFunction = (functionAST, data) => {
   const evaluatedParams = R.map(evaluate(data), functionAST.args);
+  console.log(functionAST);
   return data.helpers[functionAST.name].call(undefined, ...evaluatedParams, data.context);
 };
 
@@ -17,6 +18,7 @@ const evaluationFunctions = {
   func: evaluateFunction,
   property: (propertyAST, data) => R.path(propertyAST.data, data.context),
   number: (propertyAST, data) => propertyAST.data,
+  boolean: (propertyAST, data) => propertyAST.data,
   string: (propertyAST, data) => propertyAST.data,
   universal: () => true
 };
@@ -39,8 +41,9 @@ const contentFunctions = {
   partialLink: (partialsList, contentChunkAST, data) => bestResultForPartial(data, partialsList)(contentChunkAST.data),
   text:  (partialsList, contentChunkAST, data) => contentChunkAST.data,
   func:  (partialsList, contentChunkAST, data) => evaluateFunction(contentChunkAST, data),
-  condition: (partialsList, {conditionContent, ifContent, elseContent}, data) => {
-    const conditionOK = evaluate(data, conditionContent);
+  condition: (partialsList, {negated, conditionContent, ifContent, elseContent}, data) => {
+    const conditionOK = negated ? !evaluate(data, conditionContent) : evaluate(data, conditionContent);
+
     if (conditionOK) {
       return buildContent(data, partialsList)(ifContent);
     }
@@ -55,12 +58,12 @@ const contentFunctions = {
   }
 }
 
+const rand = (min, max) => min + Math.random() * (max - min);
+const roundRand = R.compose(Math.round, rand);
 const buildContent = (data, partialsList) => R.compose(
   R.join(''),
-  R.map(R.compose(
-    buildContentChunk(data, partialsList),
-    trace
-  ))
+  R.map(buildContentChunk(data, partialsList)),
+  list => R.nth(roundRand(0, list.length - 1), list)
 );
 
 const trace = val => {

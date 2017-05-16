@@ -1,15 +1,23 @@
 root:
-  color = 'red':
-    @second_partial @other_partial [color ? zfjoi oez,feoiz] red toto [otherFunc color]!
-  color = 'blue': blue toto !
-
-second_partial:
-  funcfunc 'toto' = 12: youpi
-  size > 50 & (color = 'red'): big
-  size <= 50: small
-
-other_partial:
-  simpleFunc size:
-    fat
   *:
-    lean
+    The name of this pokemon is @name. It has @eye_color and its skin is @color and @skin_type.
+    @type_desc
+
+type_desc:
+  type has 'grass' & (type has 'poison'): It is of the grass and poison type
+  type has 'grass': It is of the grass type
+  type has 'fire': It is of the fire type
+
+name:
+  *: [id name]
+
+color:
+  *: [id color]
+
+eye_color:
+  red_eyes: fiery red eyes
+  blue_eyes: blue eyes
+
+skin_type:
+  scaly_skin: scaly
+  warty_skin: covered in warts

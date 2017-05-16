@@ -3,20 +3,33 @@ const desc = fs.readFileSync('./main.desc').toString();
 const { evaluateTemplate, compileTemplate } = require('./descriptor');
 const helpers = require('./helpers');
 
-const rand = (min, max) => min + Math.random() * (max - min);
-
-const sampleContext = {
-  color: 'red',
-  size: 50,
-  subProp: {
-    toto: 10,
-    tutu: 90
-  }
+const venusaur = {
+  name: 'venusaur',
+  color: 'green',
+  warty_skin: true,
+  red_eyes: true,
+  type: ['grass', 'poison'],
+  back: {
+    appendage: 'flower'
+  },
+  height: 2,
+  weight: 100
 };
+
+const charmander = {
+  name: 'charmander',
+  color: 'orange',
+  scaly_skin: true,
+  blue_eyes: true,
+  type: ['fire'],
+  firy_tail: true,
+  height: 0.6,
+  weight: 8.5
+}
 
 test('it works', () =>
   expect(evaluateTemplate(compileTemplate(desc, helpers), {
-    context: sampleContext,
+    context: venusaur,
     helpers
   })).toBe('nope')
 );

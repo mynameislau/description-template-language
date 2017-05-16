@@ -1,7 +1,6 @@
 {
   const R = require('ramda');
   // const path = require('path');
-  console.log('hits', this);
   const { infixFunction } = this.helpers; // higher context
 
   const invertRecur = (operator, left, right) => {
@@ -31,7 +30,7 @@ block
 
 blockContent
 	= set
-    / content
+    / contentList
 
 selector
   = expressionSet
@@ -60,27 +59,34 @@ parenthesized
   = "(" exp:expressionSet ")" { return exp }
 
 infixLeft
-  = func // order is important here
+  = parenthesized
   / expression
 
 infixOperator
-  = operator:([^ ]+) &{ return infixFunction(operator.join('')) } { return operator.join('') }
+  = operator:([^ ]+) &{ console.log('wee', operator.join(''), infixFunction(operator.join(''))); return infixFunction(operator.join('')) } { return operator.join('') }
 
 func = name:functionName args:(_ expression)+ { return { type: 'func', name, args: args.map(arg => arg[1]) } }
 
 expression
-  = head:name tail:("." name)* { return { type: 'property', data: [head, ...R.flatten(tail.map(val => val[1].data))] } }
+  = boo:boolean { return boo }//order is important
+  / head:name tail:("." name)* { return { type: 'property', data: [head, ...R.flatten(tail.map(val => val[1].data))] } }
   / num:number { return { type: 'number', data: num } }
   / str:string { return { type: 'string', data: str } }
 
 // content stuff
 
-content = ((simpleWord / partialLink / bracketed))*
-simpleWord = data:([^@{}[\]]+) { return { type: 'text' , data: data.join('') } }
-partialLink = "@" data:name { return { type: 'partialLink', data } }
+contentList
+  = contentList:("{" ct:content "}" { return ct })+ { return contentList }//order is important
+  / ct:content { return [ct] }
+
+content
+  = content:((simpleWord / partialLink / bracketed))* { return content }
+
+simpleWord = data:([^@_{}[\]]+) { return { type: 'text' , data: data.join('') } }
+partialLink = ("@"/"_") data:name { return { type: 'partialLink', data } }
 bracketed = "[" bc:bracketedContent "]" {  return bc }
 bracketedContent
-  = conditionContent:expression " "? "?" ifContent:content elseContent:(" | " elseContent:content { return elseContent }) ? { return { type: 'condition', conditionContent, ifContent, elseContent} }
+  = conditionContent:expressionSet " "? op:("?"/"?!") ifContent:contentList elseContent:(" | " elseContent:contentList { return elseContent }) ? { return { type: 'condition', negated: op === '?!', conditionContent, ifContent, elseContent} }
   / fn:func // order is important here
 
 // end content stuff
@@ -88,6 +94,10 @@ bracketedContent
 functionName = name
 
 string = '\'' str:[^']+ '\'' { return str.join('') }
+
+boolean
+  = "true" { return { type: 'boolean', data: true } }
+  / "false" { return { type: 'boolean', data: false } }
 
 name = name:([_a-zA-Z]+ [_a-zA-Z0-9]*) { return R.join('', R.flatten(name)) }
 
