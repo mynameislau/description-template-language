@@ -1,9 +1,17 @@
 {
+  const debug = false;
   const R = require('ramda');
   // const path = require('path');
-  const { infixFunction } = this.helpers; // higher context
+  const { getInfixFunction } = this.helpers; // higher context
+
+  const log = (...args) => {
+    if (debug) {
+      console.log(args);
+    }
+  }
 
   const invertRecur = (operator, left, right) => {
+    log('inverting', operator, left, right);
     const rightInfix = right.type === 'infix';
     if (rightInfix) {
       return { type: 'infix', operator: right.operator, left: invertRecur(operator, left, right.left), right: right.right };
@@ -26,14 +34,14 @@ set
   = content:block+ { return content.filter(entry => entry) }
 
 block
-  = selector:selector " "* "{" data:blockContent "}" { return ({ selector, type: Array.isArray(data) ? 'condition' :  'end', data }) }
+  = selector:selector " "* "{" data:blockContent "}" { log('new block'); return ({ selector, type: Array.isArray(data) ? 'condition' :  'end', data }) }
 
 blockContent
 	= set
     / contentList
 
 selector
-  = expressionSet
+  = exp:expressionSet { log('selector', exp); return exp; }
   / "*" { return { type: 'universal' } }
 
 /* // todo priority ?
@@ -47,23 +55,29 @@ selector
 */
 
 expressionSet
-  = parenthesized
-  / infix
+  = infix
+  / parenthesized
   / func // order is important here - infix prevails
   / prop:expression
 
 infix
-  = left:infixLeft " " op:infixOperator " " right:expressionSet { return invertRecur(op, left, right)}
+  = left:infixLeft " " op:infixOperator " " right:expressionSet & {
+    log('testing infix', options); 
+    return true;
+    } {
+    log('yes, inverting');
+    return invertRecur(op, left, right)
+  }
 
 parenthesized
-  = "(" exp:expressionSet ")" { return exp }
+  = "(" exp:expressionSet ")" { log('parenthesized', exp); return exp }
 
 infixLeft
   = parenthesized
   / expression
 
 infixOperator
-  = operator:([^ ]+) &{ console.log('wee', operator.join(''), infixFunction(operator.join(''))); return infixFunction(operator.join('')) } { return operator.join('') }
+  = operator:([^ @{}\(\)|[\]]+) &{ log('infix :', operator.join(''), getInfixFunction(operator.join(''))); return getInfixFunction(operator.join('')) } { return operator.join('') }
 
 func = name:functionName args:(_ expression)+ { return { type: 'func', name, args: args.map(arg => arg[1]) } }
 
@@ -80,13 +94,13 @@ contentList
   / ct:content { return [ct] }
 
 content
-  = content:((simpleWord / partialLink / bracketed))* { return content }
+  = content:((simpleWord / partialLink / bracketed))* { log('new content', content); return content }
 
-simpleWord = data:([^@_{}[\]]+) { return { type: 'text' , data: data.join('') } }
+simpleWord = data:([^@_{}|[\]]+) { log('simple', data.join('')); return { type: 'text' , data: data.join('') } }
 partialLink = ("@"/"_") data:name { return { type: 'partialLink', data } }
-bracketed = "[" bc:bracketedContent "]" {  return bc }
+bracketed = "[" bc:bracketedContent "]" { log('bracketed'); return bc }
 bracketedContent
-  = conditionContent:expressionSet " "? op:("?"/"?!") ifContent:contentList elseContent:(" | " elseContent:contentList { return elseContent }) ? { return { type: 'condition', negated: op === '?!', conditionContent, ifContent, elseContent} }
+  = conditionContent:expressionSet " "? op:("? "/"?! ") ifContent:contentList elseContent:("| " elseContent:contentList { return elseContent }) ? { return { type: 'condition', negated: op === '?!', conditionContent, ifContent, elseContent} }
   / fn:func // order is important here
 
 // end content stuff
